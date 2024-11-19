@@ -14,4 +14,8 @@ Plot graphs for distributions, boxplot, correlation heatmap, scatter graph and p
 
 3) Use pip or uv pip (if installed) to install the required packages from requirements.txt, pip install -r requirements.txt
 
-4) streamlit run ./main.py
+## Running the app
+
+1) streamlit run ./main.py
+
+2) View the app -> localhost:8501 or 127.0.0.1:8501

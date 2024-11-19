@@ -24,7 +24,7 @@ if uploaded_file is not None:
     numeric_df = df.select_dtypes(include=['number'])
     category_df = df.select_dtypes(include=['object'])
 
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1,1.5])
 
     with col1:
         # A label, "Data profile"
