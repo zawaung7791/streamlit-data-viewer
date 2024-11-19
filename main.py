@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(layout="wide")
-st.title("Quick Data Previewer")
+st.title("Streamlit Data Previewer")
 st.header("File")
 
 # A button to upload the file, excel or csv
