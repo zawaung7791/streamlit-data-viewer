@@ -51,7 +51,18 @@ if uploaded_file is not None:
         st.text("Summary stats")
         st.write(df.describe())
 
-        # Display the numerical columns
+        # Display dataframe info
+        st.text("Dataframe Info")
+        info_df = pd.DataFrame({
+            "Datatype": df.dtypes,
+            "Count": df.count(),
+            "Distinct Count": df.nunique(),
+            "Null Values": df.isnull().sum(),
+            "Blanks": (df == '').sum()
+        })
+        st.write(info_df)
+
+                # Display the numerical columns
         st.text("Numerical columns")
         st.write(numeric_df.dtypes)
 
@@ -88,7 +99,7 @@ if uploaded_file is not None:
             st.warning("No numeric columns available for correlation heatmap.")
 
         # Display a scatter plot
-        st.text("Scatter Plot")
+        st.text("Regression Plot")
         if len(numeric_df.columns) > 1 or not category_df.select_dtypes(include=['datetime']).empty:
             x_column = st.selectbox("Select x column", numeric_df.columns.union(category_df.select_dtypes(include=['datetime']).columns))
             y_column = st.selectbox("Select y column", numeric_df.columns)
