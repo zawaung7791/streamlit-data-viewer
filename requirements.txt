@@ -4,3 +4,4 @@ plotly
 kagglehub
 pandas
 statsmodels
+openpyxl
