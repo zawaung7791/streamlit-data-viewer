@@ -14,17 +14,29 @@ if uploaded_file is not None:
     try:
         # Handle if csv or excel file loaded
         if uploaded_file.name.endswith('.xlsx'):
-            df = pd.read_excel(uploaded_file)
+            excel_file = pd.ExcelFile(uploaded_file)
+            sheet_names = excel_file.sheet_names
+            sheet = st.selectbox("Select the Excel sheet", sheet_names)
+            df = pd.read_excel(uploaded_file, sheet_name=sheet)
         else:
             df = pd.read_csv(uploaded_file)
+        
+        # Convert columns with date data to date format
+        for col in df.columns:
+            if pd.api.types.is_object_dtype(df[col]):
+                try:
+                    df[col] = pd.to_datetime(df[col])
+                except (ValueError, TypeError):
+                    pass
+
     except Exception as e:
         st.error(f"Error loading file: {e}")
         st.stop()
 
     numeric_df = df.select_dtypes(include=['number'])
-    category_df = df.select_dtypes(include=['object'])
+    category_df = df.select_dtypes(include=['object', 'datetime'])
 
-    col1, col2 = st.columns([1,1.5])
+    col1, col2 = st.columns([1, 1.5])
 
     with col1:
         # A label, "Data profile"
@@ -41,13 +53,14 @@ if uploaded_file is not None:
 
         # Display the numerical columns
         st.text("Numerical columns")
-        st.table([numeric_df.columns, numeric_df.dtypes])
+        st.write(numeric_df.dtypes)
 
         # Display the categorical columns
         st.text("Categorical columns")
-        st.table([category_df.columns, category_df.dtypes])
+        st.write(category_df.dtypes)
 
     with col2:
+
         # Display a histogram
         st.text("Histogram")
         if not numeric_df.empty:
@@ -76,8 +89,8 @@ if uploaded_file is not None:
 
         # Display a scatter plot
         st.text("Scatter Plot")
-        if len(numeric_df.columns) > 1:
-            x_column = st.selectbox("Select x column", numeric_df.columns)
+        if len(numeric_df.columns) > 1 or not category_df.select_dtypes(include=['datetime']).empty:
+            x_column = st.selectbox("Select x column", numeric_df.columns.union(category_df.select_dtypes(include=['datetime']).columns))
             y_column = st.selectbox("Select y column", numeric_df.columns)
             add_regression = st.checkbox("Add regression line")
             fig = px.scatter(df, x=x_column, y=y_column, trendline="ols" if add_regression else None)
@@ -94,5 +107,3 @@ if uploaded_file is not None:
             st.plotly_chart(fig)
         else:
             st.warning("No suitable columns available for pie chart.")
-
-
