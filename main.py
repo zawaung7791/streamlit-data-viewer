@@ -4,16 +4,20 @@ import pandas as pd
 import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 st.title("Streamlit Data Previewer")
 
 # Create tabs
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Data Profile", "Histogram", "Boxplot","Correlation Heatmap", "Scatter Plot", "Tree Map"])
 
+# create sidebar
+st.sidebar.title("File Upload")
+uploaded_file = st.sidebar.file_uploader("Choose a file", type=['csv', 'xlsx'])
+st.sidebar.text("By Zaw Aung 2024")
+
 with tab1:
-    st.header("File")
-    # A button to upload the file, excel or csv
-    uploaded_file = st.file_uploader("Choose a file", type=['xlsx', 'csv'])
+    st.header("Data Profile")
 
     # If the file is uploaded, show the file name
     if uploaded_file is not None:
@@ -31,7 +35,7 @@ with tab1:
             category_df = df.select_dtypes(include=['object', 'datetime'])
 
             # A label, "Data profile"
-            st.text("Data profile")
+            st.text("Data shape")
             st.write(df.shape)
 
             # Display the dataframe
@@ -56,6 +60,8 @@ with tab1:
         except Exception as e:
             st.error(f"Error loading file: {e}")
             st.stop()
+    else:
+        st.write("No file uploaded yet.")
 
 with tab2:
     if uploaded_file is not None:
@@ -95,6 +101,13 @@ with tab4:
             corr = numeric_df.corr()
             fig, ax = plt.subplots()
             sns.heatmap(corr, cmap='coolwarm', ax=ax)
+            # show correlation values in heatmap
+            for (i, j), val in np.ndenumerate(corr):
+                ax.text(j + 0.5, i + 0.5, f"{val:.2f}", ha='center', va='center', color='black')
+            
+
+            
+
             st.pyplot(fig)
         else:
             st.write("No numeric columns available for correlation heatmap.")
