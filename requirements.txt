@@ -5,3 +5,4 @@ kagglehub
 pandas
 statsmodels
 openpyxl
+seaborn

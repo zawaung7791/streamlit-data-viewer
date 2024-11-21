@@ -1,120 +1,134 @@
+from pickle import FALSE
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
 st.title("Streamlit Data Previewer")
-st.header("File")
 
-# A button to upload the file, excel or csv
-uploaded_file = st.file_uploader("Choose a file", type=['xlsx', 'csv'])
+# Create tabs
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Data Profile", "Histogram", "Boxplot","Correlation Heatmap", "Scatter Plot", "Tree Map"])
 
-# If the file is uploaded, show the file name
-if uploaded_file is not None:
-    try:
-        # Handle if csv or excel file loaded
-        if uploaded_file.name.endswith('.xlsx'):
-            excel_file = pd.ExcelFile(uploaded_file)
-            sheet_names = excel_file.sheet_names
-            sheet = st.selectbox("Select the Excel sheet", sheet_names)
-            df = pd.read_excel(uploaded_file, sheet_name=sheet)
+with tab1:
+    st.header("File")
+    # A button to upload the file, excel or csv
+    uploaded_file = st.file_uploader("Choose a file", type=['xlsx', 'csv'])
+
+    # If the file is uploaded, show the file name
+    if uploaded_file is not None:
+        try:
+            # Handle if csv or excel file loaded
+            if uploaded_file.name.endswith('.xlsx'):
+                excel_file = pd.ExcelFile(uploaded_file)
+                sheet_names = excel_file.sheet_names
+                sheet = st.selectbox("Select the Excel sheet", sheet_names)
+                df = pd.read_excel(uploaded_file, sheet_name=sheet)
+            else:
+                df = pd.read_csv(uploaded_file)
+
+            numeric_df = df.select_dtypes(include=['number'])
+            category_df = df.select_dtypes(include=['object', 'datetime'])
+
+            # A label, "Data profile"
+            st.text("Data profile")
+            st.write(df.shape)
+
+            # Display the dataframe
+            st.text("Data preview")
+            st.write(df.head())
+
+            # Display the data types
+            st.text("Summary stats")
+            st.write(df.describe())
+
+            # Display dataframe info
+            st.text("Dataframe Info")
+            info_df = pd.DataFrame({
+                "Datatype": df.dtypes,
+                "Count": df.count(),
+                "Distinct Count": df.nunique(),
+                "Null Values": df.isnull().sum(),
+                "Blanks": (df == '').sum()
+            })
+            st.write(info_df)
+
+        except Exception as e:
+            st.error(f"Error loading file: {e}")
+            st.stop()
+
+with tab2:
+    if uploaded_file is not None:
+        st.header("Histogram")
+        # Select variable for histogram
+        column = st.selectbox("Select a numeric column for histogram", numeric_df.columns)
+        if column:
+            st.text(f"Histogram for {column}")
+            fig = px.histogram(numeric_df, x=column, marginal="violin", nbins=30, text_auto=True)
+            st.plotly_chart(fig)
         else:
-            df = pd.read_csv(uploaded_file)
-        
-        # Convert columns with date data to date format
-        for col in df.columns:
-            if pd.api.types.is_object_dtype(df[col]):
-                try:
-                    df[col] = pd.to_datetime(df[col])
-                except (ValueError, TypeError):
-                    pass
+            st.write("No suitable columns available for histogram.")
+    else:
+        st.write("No data loaded for histogram.")
 
-    except Exception as e:
-        st.error(f"Error loading file: {e}")
-        st.stop()
+with tab3:
+    if uploaded_file is not None:
+        st.header("Boxplot")
+        # Select variable for boxplot
+        column = st.selectbox("Select a numeric column for boxplot", numeric_df.columns)
+        if column:
+            st.text(f"Boxplot for {column}")
+            fig = px.box(numeric_df, y=column, points='all')
+            fig.update_traces(boxpoints='all', jitter=0.3, pointpos=-1.8)
+            st.plotly_chart(fig)
+        else:
+            st.write("No suitable columns available for boxplot.")
+    else:
+        st.write("No data loaded for boxplot.")
+    
 
-    numeric_df = df.select_dtypes(include=['number'])
-    category_df = df.select_dtypes(include=['object', 'datetime'])
-
-    col1, col2 = st.columns([1, 1.5])
-
-    with col1:
-        # A label, "Data profile"
-        st.text("Data profile")
-        st.write(df.shape)
-
-        # Display the dataframe
-        st.text("Data preview")
-        st.write(df.head())
-
-        # Display the data types
-        st.text("Summary stats")
-        st.write(df.describe())
-
-        # Display dataframe info
-        st.text("Dataframe Info")
-        info_df = pd.DataFrame({
-            "Datatype": df.dtypes,
-            "Count": df.count(),
-            "Distinct Count": df.nunique(),
-            "Null Values": df.isnull().sum(),
-            "Blanks": (df == '').sum()
-        })
-        st.write(info_df)
-
-                # Display the numerical columns
-        st.text("Numerical columns")
-        st.write(numeric_df.dtypes)
-
-        # Display the categorical columns
-        st.text("Categorical columns")
-        st.write(category_df.dtypes)
-
-    with col2:
-
-        # Display a histogram
-        st.text("Histogram")
+with tab4:
+    if uploaded_file is not None:
+        st.header("Correlation Heatmap")
+        # Plotting correlation heatmap for numeric data
         if not numeric_df.empty:
-            column1 = st.selectbox("Select a column for histogram", numeric_df.columns)
-            fig = px.histogram(df, x=column1)
-            st.plotly_chart(fig)
+            corr = numeric_df.corr()
+            fig, ax = plt.subplots()
+            sns.heatmap(corr, cmap='coolwarm', ax=ax)
+            st.pyplot(fig)
         else:
-            st.warning("No numeric columns available for histogram.")
+            st.write("No numeric columns available for correlation heatmap.")
+    else:
+        st.write("No data loaded for correlation heatmap.")
 
-        # Display a box plot
-        st.text("Box Plot")
-        if not numeric_df.empty:
-            column2 = st.selectbox("Select a column for box plot", numeric_df.columns)
-            fig = px.box(df, y=column2)
+with tab5:
+    if uploaded_file is not None:
+        st.header("Scatter Plot")
+        # Select variables for scatter plot
+        x_column = st.selectbox("Select X-axis column for scatter plot", numeric_df.columns)
+        y_column = st.selectbox("Select Y-axis column for scatter plot", numeric_df.columns)
+        add_regression = st.checkbox("Add regression line")
+        if x_column and y_column:
+            st.text(f"Scatter plot for {x_column} vs {y_column}")
+            fig = px.scatter(numeric_df, x=x_column, y=y_column, trendline="ols" if add_regression else None)
             st.plotly_chart(fig)
         else:
-            st.warning("No numeric columns available for box plot.")
+            st.write("No suitable columns available for scatter plot.")
+    else:
+        st.write("No data loaded for scatter plot.")
 
-        # Display a correlation heatmap
-        st.text("Correlation Heatmap")
-        if not numeric_df.empty:
-            fig = px.imshow(numeric_df.corr())
+with tab6:
+    if uploaded_file is not None:
+        st.header("Treemap")
+        # Select variables for treemap
+        category_column = st.selectbox("Select a categorical column for treemap", category_df.columns)
+        value_column = st.selectbox("Select a numeric column for treemap values", numeric_df.columns)
+        if category_column and value_column:
+            st.text(f"Treemap for {category_column} with values from {value_column}")
+            fig = px.treemap(df, path=[category_column], values=value_column)
+            fig.update_traces(textinfo="label+value")
             st.plotly_chart(fig)
         else:
-            st.warning("No numeric columns available for correlation heatmap.")
-
-        # Display a scatter plot
-        st.text("Regression Plot")
-        if len(numeric_df.columns) > 1 or not category_df.select_dtypes(include=['datetime']).empty:
-            x_column = st.selectbox("Select x column", numeric_df.columns.union(category_df.select_dtypes(include=['datetime']).columns))
-            y_column = st.selectbox("Select y column", numeric_df.columns)
-            add_regression = st.checkbox("Add regression line")
-            fig = px.scatter(df, x=x_column, y=y_column, trendline="ols" if add_regression else None)
-            st.plotly_chart(fig)
-        else:
-            st.warning("Not enough numeric columns available for scatter plot.")
-
-        # Display a pie chart
-        st.text("Pie Chart")
-        if not category_df.empty and not numeric_df.empty:
-            category_column = st.selectbox("Select category column", category_df.columns)
-            value_column = st.selectbox("Select value column", numeric_df.columns)
-            fig = px.pie(df, names=category_column, values=value_column)
-            st.plotly_chart(fig)
-        else:
-            st.warning("No suitable columns available for pie chart.")
+            st.write("No suitable columns available for tree map.")
+    else:
+        st.write("No data loaded for pie chart.")
